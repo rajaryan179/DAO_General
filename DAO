@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract DAO {
+    struct Proposal {
+        string description;
+        uint256 voteCount;
+        bool executed;
+    }
+
+    mapping(uint256 => Proposal) public proposals;
+    uint256 public proposalCount;
+    mapping(address => bool) public members;
+    mapping(uint256 => mapping(address => bool)) public votes;
+
+    constructor(address[] memory _members) {
+        for (uint256 i = 0; i < _members.length; i++) {
+            members[_members[i]] = true;
+        }
+    }
+
+    function createProposal(string memory _description) public {
+        require(members[msg.sender], "Only members can create proposals");
+        proposalCount++;
+        proposals[proposalCount] = Proposal(_description, 0, false);
+    }
+
+    function vote(uint256 _proposalId) public {
+        require(members[msg.sender], "Only members can vote");
+        require(!votes[_proposalId][msg.sender], "Already voted");
+        Proposal storage proposal = proposals[_proposalId];
+        require(!proposal.executed, "Proposal already executed");
+        proposal.voteCount++;
+        votes[_proposalId][msg.sender] = true;
+    }
+
+    function executeProposal(uint256 _proposalId) public {
+        Proposal storage proposal = proposals[_proposalId];
+        require(proposal.voteCount > 0, "Not enough votes");
+        require(!proposal.executed, "Proposal already executed");
+        proposal.executed = true;
+    }
+}
